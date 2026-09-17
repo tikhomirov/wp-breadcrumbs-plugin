@@ -174,10 +174,13 @@ if ( ! class_exists('SchemaOrgBreadCrumbs') ) {
          * @since  1.0.0
          */
         private function maybe_add_pt_archive_crumb_for_post() {
+            if ( ! $this->post instanceof WP_Post ) {
+                return;
+            }
             if ( 'post' === $this->post->post_type ) {
                 return;
             }
-            if ( isset( $this->post->post_type ) && get_post_type_archive_link( $this->post->post_type ) ) {
+            if ( get_post_type_archive_link( $this->post->post_type ) ) {
                 $this->add_crumb( $this->post_type_archive_title( $this->post->post_type ), get_post_type_archive_link( $this->post->post_type ) );
             }
         }
@@ -213,6 +216,10 @@ if ( ! class_exists('SchemaOrgBreadCrumbs') ) {
          */
         private function get_post_ancestors() {
             $ancestors = array();
+
+            if ( ! $this->post instanceof WP_Post ) {
+                return $ancestors;
+            }
 
             if ( isset( $this->post->ancestors ) ) {
                 if ( is_array( $this->post->ancestors ) ) {

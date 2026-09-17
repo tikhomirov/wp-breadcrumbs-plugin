@@ -3,13 +3,13 @@
  * Plugin Name: Breadcrumbs
  * Plugin URL: https://rwsite.ru
  * Description: WordPress breadcrumbs plugin with support schema.org. PHP 8.2 ready. How to use: <code>breadcrumbs();</code> or shortcode: <code>[breadcrumbs]</code>
- * Version: 1.0.0
+ * Version: 1.0.1
  * Text Domain: breadcrumbs
  * Domain Path: /languages
  * Author: Aleksey Tikhomirov
  *
  * Requires at least: 4.6
- * Tested up to: 6.3
+ * Tested up to: 6.8
  * Requires PHP: 8.0+
  *
  */
@@ -17,14 +17,12 @@
 
 defined('ABSPATH') or die('Nothing here!');
 
-load_plugin_textdomain('breadcrumbs', false, dirname(plugin_basename(__FILE__)) . '/languages');
+add_action('init', static function (): void {
+    load_plugin_textdomain('breadcrumbs', false, dirname(plugin_basename(__FILE__)) . '/languages');
+});
 
-/***
- * Add Schema.org support.
- * single data markup scheme
- */
-require_once 'SchemaOrgBreadCrumbs.php';
-add_action('wp', 'SchemaOrgBreadCrumbs::instance');
+require_once __DIR__ . '/SchemaOrgBreadCrumbs.php';
+add_action('wp', [SchemaOrgBreadCrumbs::class, 'instance']);
 
 /**
  * Show breadcrumbs tree
@@ -60,25 +58,24 @@ if (!function_exists('breadcrumbs')) :
         // Post
 
         if (is_front_page()) {
-            return $html = '';
+            return '';
         } elseif (is_singular('post')) {
-            // Get post category info
             $category = get_the_category();
-            // Get category values
-            $category_values = array_values($category);
-            // Get last category post is in
-            $last_category = end($category_values);
-            // Get parent categories
-            $cat_parents = rtrim((string)get_category_parents($last_category->term_id, true, ','), ',');
-            // Convert into array
-            $cat_parents = explode(',', $cat_parents);
-            // Loop through parent categories and add to breadcrumb trail
-            foreach ($cat_parents as $parent) {
-                $html .= '<span class="item-cat">' . wp_kses($parent, wp_kses_allowed_html('a')) . '</span>';
-                $html .= $separator;
+            if (! empty($category) && ! is_wp_error($category)) {
+                $category_values = array_values($category);
+                $last_category = end($category_values);
+                if ($last_category instanceof WP_Term) {
+                    $cat_parents = rtrim((string) get_category_parents($last_category->term_id, true, ','), ',');
+                    if ($cat_parents !== '') {
+                        foreach (explode(',', $cat_parents) as $parent) {
+                            $html .= '<span class="item-cat">' . wp_kses($parent, wp_kses_allowed_html('a')) . '</span>';
+                            $html .= $separator;
+                        }
+                    }
+                }
             }
-            // add name of Post
-            $html .= '<span class="item-current item-' . $post->ID . '"><span class="bread-current bread-' . $post->ID . '" title="' . get_the_title() . '">' . get_the_title() . '</span></span>';
+            $post_id = $post->ID ?? get_the_ID();
+            $html .= '<span class="item-current item-' . esc_attr((string) $post_id) . '"><span class="bread-current bread-' . esc_attr((string) $post_id) . '" title="' . esc_attr(get_the_title()) . '">' . esc_html(get_the_title()) . '</span></span>';
         } // Page
         elseif (is_singular('page')) {
             // if page has a parent page
@@ -136,7 +133,7 @@ if (!function_exists('breadcrumbs')) :
                 $html .= $separator;
             }
             // Add category markup
-            $html .= '<span class="item-current item-cat"><span class="bread-current bread-cat" title="' . $post->ID . '">' . single_cat_title('', false) . '</span></span>';
+            $html .= '<span class="item-current item-cat"><span class="bread-current bread-cat">' . esc_html(single_cat_title('', false)) . '</span></span>';
         } // Tag
         elseif (is_tag()) {
             // Add tag markup
