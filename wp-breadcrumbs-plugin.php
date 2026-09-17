@@ -3,7 +3,7 @@
  * Plugin Name: Breadcrumbs
  * Plugin URL: https://rwsite.ru
  * Description: WordPress breadcrumbs plugin with support schema.org. PHP 8.2 ready. How to use: <code>breadcrumbs();</code> or shortcode: <code>[breadcrumbs]</code>
- * Version: 1.0.1
+ * Version: 1.0.2
  * Text Domain: breadcrumbs
  * Domain Path: /languages
  * Author: Aleksey Tikhomirov
